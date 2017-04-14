@@ -1,7 +1,7 @@
 /**
 
 	Remember to put "-lnuma" during the compilation: "gcc ... -lnuma"
-
+	Had to install the lib -> "libnuma-dev"
  */
 
 #include <stdio.h>
@@ -30,6 +30,8 @@ void create();
 void print();
 bool search(uint32_t);
 void iniArray();
+uint32_t getHigh(uint64_t);
+uint32_t getLow(uint64_t);
 
 int numValues = 0;
 uint64_t *array;
@@ -158,14 +160,23 @@ void iniArray() {
 	
 	int i = 0;
 	while (temp2 != NULL) {
+		// "n" will be the first 32-bit (HIGH) and "count" will be the last 32-bit (LOW)
 		array[i] = (((uint64_t) temp2->n) << 32) | ((uint64_t) temp2->count);
 		
-		printf("%" PRIu64 " \n", array[i]);
-		//printf("High: %" PRIu64 " \n", array[i] >> 32);
+		//printf("High: %" PRIu32 " \n", getHigh(array[i]));
+		//printf("Low: %" PRIu32 " \n", getLow(array[i]));
 		temp2 = temp2->next;
 		i++;
 	}
 	
 	free(temp2);
 
+}
+
+uint32_t getHigh(uint64_t valueAndCount) {
+	return valueAndCount >> 32;
+}
+
+uint32_t getLow(uint64_t valueAndCount) {
+	return valueAndCount & 0xFFFFFFFF;
 }
