@@ -19,56 +19,60 @@ struct node {
 	struct node *next;
 	uint32_t n;
 	uint32_t count;
-} *list, *temp, *head;
+} *list, *temp, *head, *middle;
 
 struct utsname unameData; // used to get the kernel version
 struct sysinfo sysinfoData;
 
-void showSystemInfo();
-void insert(uint32_t);
+void show_system_info();
+void insert(int32_t);
 void create();
 void print();
-bool search(uint32_t);
-void iniArray();
-uint32_t getHigh(uint64_t);
-uint32_t getLow(uint64_t);
+int search(int32_t);
+void ini_array();
+int32_t get_high(int64_t);
+int32_t get_low(int64_t);
+int32_t my_bin_search(int32_t value, void *data, int type);
+void set_middle();
 
 int numValues = 0;
-uint64_t *array;
+int64_t *array;
 
 int main() {
 
-	showSystemInfo();
+	show_system_info();
 	
 	char c[5] = {'\0'};
-	uint32_t value;
+	int32_t value;
 	printf("Type numbers.\n");
 	int i = 0;
 	do {
 		fgets(c, sizeof (c), stdin); // get value as a char array
+	
 		// check if the user pressed enter
 		// if he/she pressed twice, then exit the loop	
 		if (strcmp(c, "\n") == 0) {
 			i++;
 			continue;
 		}
-
+		
 		// check if the user typed a number
 		if (sscanf (c, "%" SCNd32, &value) == 1) {
 			insert(value);
 		}
 		i = 0;
-
+		
 	} while (i != 2);
 
 	print();
-	iniArray();
+	ini_array();
+	printf("Middle: %" PRId32 "\n", middle->n);
 
 	return 0;
 
 }
 
-void showSystemInfo() {
+void show_system_info() {
 	printf("--------------------\n\n");	
 
 	printf("PID: %d \n", getpid()); // ID of the calling process
@@ -85,26 +89,28 @@ void showSystemInfo() {
 	printf("\n--------------------\n\n");
 }
 
-void insert(uint32_t value) {
+void insert(int32_t value) {
 	
 	if (list == NULL) {
 		create();
 		temp->n = value;
 		list = temp;
-		head = list;
+		head = list; 
+		middle = list;
 		return;
 	} 
 
-	if (search(value))
+	if (search(value) != -1)
 		return;
 	else {
 		create();
 		temp->n = value;
 		head->next = temp;
 		temp->prev = head;
-		head = temp;
+		head = temp; // head will always point to the last added element
 	}
 	numValues++;
+	set_middle();
 	
 }
 
@@ -125,7 +131,7 @@ void print() {
 	
 	printf("Values: ");
 	while (temp2 != NULL) {
-		printf("%" PRIu32 " ", temp2->n);
+		printf("%" PRId32 " ", temp2->n);
 		temp2 = temp2->next;
 	}
 	printf("\n");
@@ -133,38 +139,40 @@ void print() {
 	
 }
 
-bool search(uint32_t value) {
+int search(int32_t value) {
 	
 	struct node* temp2 = list;
 
 	if (temp2 == NULL) {
 		printf("The list is empty!\n");
-		return false;
+		return -1;
 	}
-
+	
+	int i = 0;
 	while (temp2 != NULL) {
+		i++;
 		if (temp2->n == value) {
 			temp2->count++;
-			return true;
+			return i;
 		}
 		temp2 = temp2->next;
 	}
 	
-	return false;
+	return -1;
 
 }
 
-void iniArray() {
+void ini_array() {
 	struct node *temp2 = list;
 	array = malloc(numValues * sizeof(*array));
 	
 	int i = 0;
 	while (temp2 != NULL) {
 		// "n" will be the first 32-bit (HIGH) and "count" will be the last 32-bit (LOW)
-		array[i] = (((uint64_t) temp2->n) << 32) | ((uint64_t) temp2->count);
+		array[i] = (((int64_t) temp2->n) << 32) | ((int64_t) temp2->count);
 		
-		//printf("High: %" PRIu32 " \n", getHigh(array[i]));
-		//printf("Low: %" PRIu32 " \n", getLow(array[i]));
+		//printf("High: %" PRId32 " \n", getHigh(array[i]));
+		//printf("Low: %" PRId32 " \n", getLow(array[i]));
 		temp2 = temp2->next;
 		i++;
 	}
@@ -173,10 +181,30 @@ void iniArray() {
 
 }
 
-uint32_t getHigh(uint64_t valueAndCount) {
+int32_t get_high(int64_t valueAndCount) {
 	return valueAndCount >> 32;
 }
 
-uint32_t getLow(uint64_t valueAndCount) {
+int32_t get_low(int64_t valueAndCount) {
 	return valueAndCount & 0xFFFFFFFF;
+}
+
+int32_t my_bin_search(int32_t value, void *data, int type) {
+	return -1;
+}
+
+void set_middle() {
+	struct node *temp2 = list;
+
+	if (list == NULL) {
+		printf("The list is empty!\n");
+		return;
+	}
+	
+	for (int i = 0; i < (int)(numValues/2); i++) {
+		temp2 = temp2->next;
+	}
+
+	middle = temp2;
+
 }
