@@ -22,9 +22,10 @@ struct node {
 } *newNode, *middle, *first, *last;
 
 struct utsname unameData; // used to get the kernel version
-struct sysinfo sysinfoData;
+struct sysinfo sysinfoData; // used to get the total ram size
 
 void show_system_info();
+void get_user_input();
 void insert(int32_t);
 void create();
 void print();
@@ -34,39 +35,21 @@ int32_t get_high(int64_t);
 int32_t get_low(int64_t);
 int32_t my_bin_search(int32_t value, void *data, int type);
 void set_middle();
+void get_user_search_input();
 
 int numValues = 0;
-int64_t *array;
+int64_t *myArray;
 
 int main() {
 
 	show_system_info();
+	get_user_input();
 	
-	char c[5] = {'\0'};
-	int32_t value;
-	printf("Type numbers.\n");
-	int i = 0;
-	do {
-		fgets(c, sizeof (c), stdin); // get value as a char array
-	
-		// check if the user pressed enter
-		// if he/she pressed twice, then exit the loop	
-		if (strcmp(c, "\n") == 0) {
-			i++;
-			continue;
-		}
-		
-		// check if the user typed a number
-		if (sscanf (c, "%" SCNd32, &value) == 1) {
-			insert(value);
-		}
-		i = 0;
-		
-	} while (i != 2);
-
 	print();
 	ini_array();
-	printf("Middle: %" PRId32 "\n", middle->n);
+	
+	get_user_search_input();	
+	printf("Middle: %" PRId32 "\n", middle->n);	
 
 	return 0;
 
@@ -87,6 +70,58 @@ void show_system_info() {
 	printf("NUMA nodes: %d\n", numa_num_configured_nodes()); // show the number of NUMA nodes	
 
 	printf("\n--------------------\n\n");
+}
+
+void get_user_input() {
+	char c[5] = {'\0'};
+	int32_t value;
+	printf("Type numbers: (or double ENTER to quit)\n");
+	int i = 0;
+	do {
+		fgets(c, sizeof (c), stdin); // get value as a char array
+	
+		// check if the user pressed enter
+		// if he/she pressed twice, then exit the loop	
+		if (strcmp(c, "\n") == 0) {
+			i++;
+			continue;
+		}
+		
+		// check if the user typed a number
+		if (sscanf (c, "%" SCNd32, &value) == 1) {
+			insert(value);
+		}
+		i = 0;
+		
+	} while (i != 2);
+
+}
+
+void get_user_search_input() {
+	char c[5] = {'\0'};
+	int32_t value;
+	printf("\nNumber to be searched: (or double ENTER to quit)\n");
+	int i = 0;
+	do {
+		fgets(c, sizeof (c), stdin); // get value as a char array
+	
+		// check if the user pressed enter
+		// if he/she pressed twice, then exit the loop	
+		if (strcmp(c, "\n") == 0) {
+			i++;
+			continue;
+		}
+		
+		// check if the user typed a number
+		if (sscanf (c, "%" SCNd32, &value) == 1) {
+			//my_bin_search(value, myArray, 1);
+			my_bin_search(value, middle, 0);
+		}
+		i = 0;
+		
+	} while (i != 2);
+
+
 }
 
 void insert(int32_t value) {
@@ -193,15 +228,15 @@ int search(int32_t value) {
 void ini_array() {
 	
 	struct node *temp2 = first;
-	array = malloc(numValues * sizeof(*array));
+	myArray = malloc(numValues * sizeof(*myArray));
 	
 	int i = 0;
 	do {
 		// "n" will be the first 32-bit (HIGH) and "count" will be the last 32-bit (LOW)
-		array[i] = (((int64_t) temp2->n) << 32) | ((int64_t) temp2->count);
+		myArray[i] = (((int64_t) temp2->n) << 32) | ((int64_t) temp2->count);
 		
-		printf("High: %" PRId32 " \n", get_high(array[i]));
-		printf("Low: %" PRId32 " \n", get_low(array[i]));
+		//printf("High: %" PRId32 " \n", get_high(myArray[i]));
+		//printf("Low: %" PRId32 " \n", get_low(myArray[i]));
 		temp2 = temp2->next;
 		i++;
 	} while (temp2 != first);
@@ -216,10 +251,9 @@ int32_t get_low(int64_t valueAndCount) {
 	return valueAndCount & 0xFFFFFFFF;
 }
 
-int32_t my_bin_search(int32_t value, void *data, int type) {
-	return -1;
-}
-
+/**
+ -- Try to optmize this using the value of the "current middle" to set the "new middle" 
+*/
 void set_middle() {
 	
 	struct node *temp2 = first;
@@ -236,3 +270,67 @@ void set_middle() {
 	middle = temp2;
 
 }
+
+int32_t my_bin_search(int32_t value, void *data, int type) {
+	int32_t lBound = 0;
+	int32_t uBound = numValues - 1;
+	int32_t index = -1;	
+
+	int32_t mid = (lBound+uBound)/2;
+	printf("MID: %" PRId32 "\n", mid);
+	if (type == 0) {
+		struct node *midElem = data;
+		//lBound = 1;
+		//uBound = numValues;
+		//mid = (lBound+uBound)/2;
+		while (lBound <= uBound) {
+			if (midElem->n < value) {
+				lBound = mid + 1;
+
+				int32_t up = ((lBound + uBound)/2) - mid;
+				int i = 0;
+				printf("UP: %d\n", up);
+				while (i < up) {
+					midElem = midElem->next;
+					i++;
+				}
+			} else if (midElem->n == value) {
+				printf("Value: %" PRId32 " at pos: %" PRId32 "\n", midElem->n, mid);
+				return mid;
+			} else {
+				uBound = mid - 1;
+
+				int32_t down = mid - ((lBound + uBound)/2);
+				int i = 0;
+				printf("DOWN: %d\n", down);
+				while (i < down) {
+					midElem = midElem->prev;
+					i++;
+				}
+			}
+			
+			mid = (lBound + uBound)/2;
+		}		
+
+	} else if (type == 1) {
+
+		while (lBound <= uBound) {
+			if (get_high(((int64_t *) data)[mid]) < value) {
+				lBound = mid + 1;
+			} else if (get_high(((int64_t *)data)[mid]) == value) {
+				return mid;
+			} else {
+				uBound = mid - 1;
+			}
+
+			mid = (lBound + uBound)/2;
+				
+		}
+	
+	}
+
+	return index;
+}
+
+
+
