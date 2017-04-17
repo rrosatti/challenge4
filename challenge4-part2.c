@@ -19,7 +19,7 @@ struct node {
 	struct node *next;
 	uint32_t n;
 	uint32_t count;
-} *list, *temp, *head, *middle;
+} *newNode, *middle, *first, *last;
 
 struct utsname unameData; // used to get the kernel version
 struct sysinfo sysinfoData;
@@ -91,12 +91,13 @@ void show_system_info() {
 
 void insert(int32_t value) {
 	
-	if (list == NULL) {
+	if (first == NULL) {
 		create();
-		temp->n = value;
-		list = temp;
-		head = list; 
-		middle = list;
+		newNode->n = value;
+		newNode->next = newNode;
+		newNode->prev = newNode;
+		first = last = middle = newNode;
+	 
 		return;
 	} 
 
@@ -104,25 +105,81 @@ void insert(int32_t value) {
 		return;
 	else {
 		create();
-		temp->n = value;
-		head->next = temp;
-		temp->prev = head;
-		head = temp; // head will always point to the last added element
+		struct node *temp2 = first;
+
+		// check if the value is equals or less than the 1st element
+		// if it is not, then it will search for another position
+		newNode->n = value;
+		if (value <= first->n) {
+			printf("First.\n");
+			//first->prev = newNode;
+			newNode->next = first;
+			newNode->prev = last;
+			first->prev = newNode;
+			last->next = newNode;
+			first = newNode;
+	
+		} else if (value >= last->n) {
+			printf("Last.\n");
+			newNode->next = first;
+			newNode->prev = last;
+			first->prev = newNode;
+			last->next = newNode;
+			last = newNode;
+			printf("Last->next: %" PRId32 "\n", last->next->n);
+			printf("Last->prev: %" PRId32 "\n", last->prev->n);
+			printf("First->prev: %" PRId32 "\n", first->prev->n);
+			printf("First->next: %" PRId32 "\n", first->next->n);
+
+		} else {
+			printf("Middle.\n");
+			while (value > temp2->n) {
+				temp2 = temp2->next; 
+			}
+			printf("Temp2->n: %" PRId32 "\n", temp2->n);
+			printf("Temp2->prev: %" PRId32 "\n", temp2->prev->n);
+			printf("Temp2->next: %" PRId32 "\n", temp2->next->n);
+
+			printf("Temp2->prev->next: %" PRId32 "\n", temp2->prev->next->n);
+		
+
+			newNode->next = temp2;
+			newNode->prev = temp2->prev;
+			//temp2->prev = newNode;
+			temp2->prev->next = newNode;
+			temp2->prev = newNode;
+
+			printf("Temp2->prev: %" PRId32 "\n", temp2->prev->n);
+			printf("Temp2->next: %" PRId32 "\n", temp2->next->n);
+			printf("First->next: %" PRId32 "\n", first->next->n);
+			printf("Temp2->prev->next: %" PRId32 "\n", temp2->prev->next->n);
+
+
+		}	
+	
 	}
+	
+	print();
+	printf("first: %" PRId32 "\n", first->n);
+	printf("newNode: %" PRId32 "\n", newNode->n);
+	printf("last: %" PRId32 "\n", last->n);
+
 	numValues++;
 	set_middle();
 	
 }
 
 void create() {
-	temp = (struct node*) malloc(1*sizeof(struct node*));
-	temp->prev = NULL;
-	temp->next = NULL;
-	temp->count = 1;
+	newNode = (struct node*) malloc(1*sizeof(struct node*));
+	newNode->prev = NULL;
+	newNode->next = NULL;
+	newNode->count = 1;
 }
 
 void print() {
-	struct node* temp2 = list;
+	
+	struct node* temp2 = first;
+
 	
 	if (temp2 == NULL) {
 		printf("The list is empty!\n");
@@ -130,18 +187,18 @@ void print() {
 	}
 	
 	printf("Values: ");
-	while (temp2 != NULL) {
+	do {
 		printf("%" PRId32 " ", temp2->n);
 		temp2 = temp2->next;
-	}
+	} while (temp2 != first);
 	printf("\n");
-	free(temp2);
+	//free(temp2);
 	
 }
 
 int search(int32_t value) {
 	
-	struct node* temp2 = list;
+	struct node *temp2 = first;
 
 	if (temp2 == NULL) {
 		printf("The list is empty!\n");
@@ -149,35 +206,36 @@ int search(int32_t value) {
 	}
 	
 	int i = 0;
-	while (temp2 != NULL) {
+	do {
 		i++;
 		if (temp2->n == value) {
 			temp2->count++;
 			return i;
 		}
 		temp2 = temp2->next;
-	}
+	} while (temp2 != last);
 	
 	return -1;
 
 }
 
 void ini_array() {
-	struct node *temp2 = list;
+	
+	struct node *temp2 = first;
 	array = malloc(numValues * sizeof(*array));
 	
 	int i = 0;
-	while (temp2 != NULL) {
+	do {
 		// "n" will be the first 32-bit (HIGH) and "count" will be the last 32-bit (LOW)
 		array[i] = (((int64_t) temp2->n) << 32) | ((int64_t) temp2->count);
 		
-		//printf("High: %" PRId32 " \n", getHigh(array[i]));
-		//printf("Low: %" PRId32 " \n", getLow(array[i]));
+		printf("High: %" PRId32 " \n", get_high(array[i]));
+		printf("Low: %" PRId32 " \n", get_low(array[i]));
 		temp2 = temp2->next;
 		i++;
-	}
+	} while (temp2 != first);
 	
-	free(temp2);
+	//free(temp2);
 
 }
 
@@ -194,9 +252,10 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 }
 
 void set_middle() {
-	struct node *temp2 = list;
+	
+	struct node *temp2 = first;
 
-	if (list == NULL) {
+	if (temp2 == NULL) {
 		printf("The list is empty!\n");
 		return;
 	}
