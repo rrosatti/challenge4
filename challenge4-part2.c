@@ -106,13 +106,9 @@ void insert(int32_t value) {
 	else {
 		create();
 		struct node *temp2 = first;
-
-		// check if the value is equals or less than the 1st element
-		// if it is not, then it will search for another position
 		newNode->n = value;
+
 		if (value <= first->n) {
-			printf("First.\n");
-			//first->prev = newNode;
 			newNode->next = first;
 			newNode->prev = last;
 			first->prev = newNode;
@@ -120,50 +116,25 @@ void insert(int32_t value) {
 			first = newNode;
 	
 		} else if (value >= last->n) {
-			printf("Last.\n");
 			newNode->next = first;
 			newNode->prev = last;
 			first->prev = newNode;
 			last->next = newNode;
 			last = newNode;
-			printf("Last->next: %" PRId32 "\n", last->next->n);
-			printf("Last->prev: %" PRId32 "\n", last->prev->n);
-			printf("First->prev: %" PRId32 "\n", first->prev->n);
-			printf("First->next: %" PRId32 "\n", first->next->n);
-
 		} else {
-			printf("Middle.\n");
 			while (value > temp2->n) {
 				temp2 = temp2->next; 
 			}
-			printf("Temp2->n: %" PRId32 "\n", temp2->n);
-			printf("Temp2->prev: %" PRId32 "\n", temp2->prev->n);
-			printf("Temp2->next: %" PRId32 "\n", temp2->next->n);
-
-			printf("Temp2->prev->next: %" PRId32 "\n", temp2->prev->next->n);
-		
 
 			newNode->next = temp2;
 			newNode->prev = temp2->prev;
-			//temp2->prev = newNode;
 			temp2->prev->next = newNode;
 			temp2->prev = newNode;
-
-			printf("Temp2->prev: %" PRId32 "\n", temp2->prev->n);
-			printf("Temp2->next: %" PRId32 "\n", temp2->next->n);
-			printf("First->next: %" PRId32 "\n", first->next->n);
-			printf("Temp2->prev->next: %" PRId32 "\n", temp2->prev->next->n);
-
 
 		}	
 	
 	}
 	
-	print();
-	printf("first: %" PRId32 "\n", first->n);
-	printf("newNode: %" PRId32 "\n", newNode->n);
-	printf("last: %" PRId32 "\n", last->n);
-
 	numValues++;
 	set_middle();
 	
@@ -191,8 +162,8 @@ void print() {
 		printf("%" PRId32 " ", temp2->n);
 		temp2 = temp2->next;
 	} while (temp2 != first);
+	
 	printf("\n");
-	//free(temp2);
 	
 }
 
@@ -234,8 +205,6 @@ void ini_array() {
 		temp2 = temp2->next;
 		i++;
 	} while (temp2 != first);
-	
-	//free(temp2);
 
 }
 
