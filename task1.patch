@@ -1,0 +1,177 @@
+diff --git a/task1:challenge4.c..master:challenge4-part1.c b/master:challenge4-part1.c
+index f6453d9..591a174 100644
+--- a/task1:challenge4.c..master:challenge4-part1.c
++++ b/master:challenge4-part1.c
+@@ -11,27 +11,29 @@
+ #include <numa.h>
+ #include <string.h>
+ #include <stdbool.h>
++#include <stdint.h>
++#include <inttypes.h>
+ 
+ struct node {
+ 	struct node *prev;
+ 	struct node *next;
+-	int n;
+-} *list, *temp, *head;
++	int32_t n;
++} *newNode, *first, *last;
+ 
+ struct utsname unameData; // used to get the kernel version
+ struct sysinfo sysinfoData;
+ 
+-void showSystemInfo();
+-void insert(int);
++void show_system_info();
++void insert(int32_t);
+ void create();
+ void print();
+-bool search(int);
++bool search(int32_t);
+ 
+ int count = 0;
+ 
+ int main() {
+ 
+-	showSystemInfo();
++	show_system_info();
+ 	
+ 	char c[5] = {'\0'};
+ 	int value;
+@@ -47,7 +49,7 @@ int main() {
+ 		}
+ 
+ 		// check if the user typed a number
+-		if (sscanf (c, "%d", &value) == 1) {
++		if (sscanf (c, "%" SCNd32, &value) == 1) {
+ 			insert(value);
+ 		}
+ 		i = 0;
+@@ -60,7 +62,7 @@ int main() {
+ 
+ }
+ 
+-void showSystemInfo() {
++void show_system_info() {
+ 	printf("--------------------\n\n");	
+ 
+ 	printf("PID: %d \n", getpid()); // ID of the calling process
+@@ -77,70 +79,91 @@ void showSystemInfo() {
+ 	printf("\n--------------------\n\n");
+ }
+ 
+-void insert(int value) {
++void insert(int32_t value) {
+ 	
+-	if (list == NULL) {
++	if (first == NULL) {
+ 		create();
+-		temp->n = value;
+-		list = temp;
+-		head = list;
++		newNode->n = value;
++		newNode->next = newNode;
++		newNode->prev = newNode;
++		first = last = newNode;
++		
++		return;
+ 	} 
+ 
+ 	if (search(value))
+ 		return;
+ 	else {
+ 		create();
+-		temp->n = value;
+-		head->next = temp;
+-		temp->prev = head;
+-		head = temp;
+-		/**temp->n = value;
+-		list->next = temp;
+-		temp->prev = list;
+-		list = temp;*/
++		struct node *temp2 = first;
++		newNode->n = value;
++
++		if (value < first->n) {
++			newNode->next = first;
++			newNode->prev = last;
++			first->prev = newNode;
++			last->next = newNode;
++			first = newNode;
++		} else if (value >= last->n) {
++			newNode->next = first;
++			newNode->prev = last;
++			first->prev = newNode;
++			last->next = newNode;
++			last = newNode;
++		} else {
++			while (value > temp2->n) {
++				temp2 = temp2->next;
++			}
++
++			newNode->next = temp2;
++			newNode->prev = temp2->prev;
++			temp2->prev->next = newNode;
++			temp2->prev = newNode;
++		}
++		
+ 	}
+ 	count++;
+ 	
+ }
+ 
+ void create() {
+-	temp = (struct node*) malloc(1*sizeof(struct node*));
+-	temp->prev = NULL;
+-	temp->next = NULL;
++	newNode = (struct node*) malloc(1*sizeof(struct node));
++	newNode->prev = NULL;
++	newNode->next = NULL;
+ }
+ 
+ void print() {
+-	struct node* temp2 = list;
++	struct node* temp2 = first;
+ 	
+-	if (temp2 == NULL) {
++	if (first == NULL) {
+ 		printf("The list is empty!\n");
+ 		return;
+ 	}
+ 	
+ 	printf("Values: ");
+-	while (temp2 != NULL) {
+-		printf("%d ", temp2->n);
++	do {
++		printf("%" PRId32 " ", temp2->n);
+ 		temp2 = temp2->next;
+-	}
++	} while (temp2 != first);
++
+ 	printf("\n");
+-	free(temp2);
+ 	
+ }
+ 
+-bool search(int value) {
++bool search(int32_t value) {
+ 	
+-	struct node* temp2 = list;
++	struct node* temp2 = first;
+ 
+-	if (temp2 == NULL) {
++	if (first == NULL) {
+ 		printf("The list is empty!\n");
+ 		return false;
+ 	}
+ 
+-	while (temp2 != NULL) {
++	do {
+ 		if (temp2->n == value)
+ 			return true;
+ 		temp2 = temp2->next;
+-	}
++	} while (temp2 != first);
+ 
+ 	return false;
+ 
