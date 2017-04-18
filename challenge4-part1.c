@@ -127,7 +127,7 @@ void insert(int32_t value) {
 }
 
 void create() {
-	newNode = (struct node*) malloc(1*sizeof(struct node*));
+	newNode = (struct node*) malloc(1*sizeof(struct node));
 	newNode->prev = NULL;
 	newNode->next = NULL;
 }

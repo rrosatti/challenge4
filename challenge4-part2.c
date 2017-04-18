@@ -18,8 +18,8 @@
 struct node {
 	struct node *prev;
 	struct node *next;
-	uint32_t n;
-	uint32_t count;
+	int32_t n;
+	int32_t count;
 } *newNode, *middle, *first, *last;
 
 struct utsname unameData; // used to get the kernel version
@@ -179,7 +179,7 @@ void insert(int32_t value) {
 }
 
 void create() {
-	newNode = (struct node*) malloc(1*sizeof(struct node*));
+	newNode = (struct node*) malloc(1*sizeof(struct node));
 	newNode->prev = NULL;
 	newNode->next = NULL;
 	newNode->count = 1;
