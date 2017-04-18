@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <time.h>
 
 struct node {
 	struct node *prev;
@@ -36,6 +37,7 @@ int32_t get_low(int64_t);
 int32_t my_bin_search(int32_t value, void *data, int type);
 void set_middle();
 void get_user_search_input();
+void show_size_of_structures();
 
 int numValues = 0;
 int64_t *myArray;
@@ -49,7 +51,8 @@ int main() {
 	ini_array();
 	
 	get_user_search_input();	
-	printf("Middle: %" PRId32 "\n", middle->n);	
+	
+	show_size_of_structures();
 
 	return 0;
 
@@ -114,7 +117,7 @@ void get_user_search_input() {
 		
 		// check if the user typed a number
 		if (sscanf (c, "%" SCNd32, &value) == 1) {
-			//my_bin_search(value, myArray, 1);
+			my_bin_search(value, myArray, 1);
 			my_bin_search(value, middle, 0);
 		}
 		i = 0;
@@ -170,7 +173,7 @@ void insert(int32_t value) {
 	
 	}
 	
-	numValues++;
+	//numValues++;
 	set_middle();
 	
 }
@@ -180,6 +183,7 @@ void create() {
 	newNode->prev = NULL;
 	newNode->next = NULL;
 	newNode->count = 1;
+	numValues++;
 }
 
 void print() {
@@ -238,7 +242,7 @@ void ini_array() {
 		//printf("High: %" PRId32 " \n", get_high(myArray[i]));
 		//printf("Low: %" PRId32 " \n", get_low(myArray[i]));
 		temp2 = temp2->next;
-		i++;
+		i++;		
 	} while (temp2 != first);
 
 }
@@ -273,36 +277,35 @@ void set_middle() {
 
 int32_t my_bin_search(int32_t value, void *data, int type) {
 	int32_t lBound = 0;
-	int32_t uBound = numValues - 1;
+	int32_t uBound = numValues;	
 	int32_t index = -1;	
-
 	int32_t mid = (lBound+uBound)/2;
-	printf("MID: %" PRId32 "\n", mid);
+	clock_t begin = clock();	
+
 	if (type == 0) {
 		struct node *midElem = data;
-		//lBound = 1;
-		//uBound = numValues;
-		//mid = (lBound+uBound)/2;
+
 		while (lBound <= uBound) {
 			if (midElem->n < value) {
 				lBound = mid + 1;
 
 				int32_t up = ((lBound + uBound)/2) - mid;
 				int i = 0;
-				printf("UP: %d\n", up);
 				while (i < up) {
 					midElem = midElem->next;
 					i++;
 				}
 			} else if (midElem->n == value) {
-				printf("Value: %" PRId32 " at pos: %" PRId32 "\n", midElem->n, mid);
-				return mid;
+				printf("(List) Value: %" PRId32 " at pos: %" PRId32 "\n", midElem->n, mid);
+				index = mid;
+				break;
+				//return mid;
 			} else {
 				uBound = mid - 1;
 
 				int32_t down = mid - ((lBound + uBound)/2);
 				int i = 0;
-				printf("DOWN: %d\n", down);
+		
 				while (i < down) {
 					midElem = midElem->prev;
 					i++;
@@ -318,7 +321,10 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 			if (get_high(((int64_t *) data)[mid]) < value) {
 				lBound = mid + 1;
 			} else if (get_high(((int64_t *)data)[mid]) == value) {
-				return mid;
+				printf("(Array) Value: %" PRId32 " at pos: %" PRId32 "\n", value, mid);
+				index = mid;
+				break;
+				//return mid;
 			} else {
 				uBound = mid - 1;
 			}
@@ -328,9 +334,23 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 		}
 	
 	}
-
+	
+	clock_t end = clock();
+	
+	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	printf("Time spent: %f seconds.\n", time_spent);
+	
 	return index;
 }
 
+void show_size_of_structures() {
+	size_t sizeArray = numValues * sizeof(myArray);
+	size_t sizeList = numValues * sizeof(first);
+	float sizeArrayKB = sizeArray / 1024;
+	float sizeListKB = sizeList / 1024;
+
+	printf("Array: %zu bytes (%.2f KB)\n", sizeArray, sizeArrayKB);
+	printf("List: %zu bytes (%.2f KB)\n", sizeList, sizeListKB);
+}
 
 
