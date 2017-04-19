@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <time.h>
+#include <sys/time.h>
 
 #define get_high(x) (x >> 32)
 #define get_low(x) (x & 0xFFFFFFFF)
@@ -243,6 +244,7 @@ void ini_array() {
 		
 		//printf("High: %ld\n", get_high(myArray[i]));
 		//printf("Low: %ld\n", get_low(myArray[i]));
+
 		temp2 = temp2->next;
 		i++;		
 	} while (temp2 != first);
@@ -274,8 +276,17 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 	int32_t uBound = numValues;	
 	int32_t index = -1;	
 	int32_t mid = (lBound+uBound)/2;
-	clock_t begin = clock();	
+	//clock_t begin = clock();	
+	//time_t start, end;
+	struct timeval start, end;
+	float timeSpent;
 
+	//time(&start);
+	gettimeofday(&start, NULL);
+
+	char* sType;
+	sType = (type == 1) ? "ARRAY" : "LIST";
+	
 	if (type == 0) {
 		struct node *midElem = data;
 
@@ -290,7 +301,7 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 					i++;
 				}
 			} else if (midElem->n == value) {
-				printf("(List) Value: %" PRId32 " at pos: %" PRId32 "\n", midElem->n, mid);
+				printf("(%s) Value: %" PRId32 " at pos: %" PRId32 "\n", sType, midElem->n, mid);
 				index = mid;
 				break;
 				//return mid;
@@ -315,7 +326,7 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 			if (get_high(((int64_t *) data)[mid]) < value) {
 				lBound = mid + 1;
 			} else if (get_high(((int64_t *)data)[mid]) == value) {
-				printf("(Array) Value: %" PRId32 " at pos: %" PRId32 "\n", value, mid);
+				printf("(%s) Value: %" PRId32 " at pos: %" PRId32 "\n", sType, value, mid);
 				index = mid;
 				break;
 				//return mid;
@@ -329,22 +340,26 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 	
 	}
 	
-	clock_t end = clock();
+	//clock_t end = clock();
+	//double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 	
-	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-	printf("Time spent: %f seconds.\n", time_spent);
+	//time(&end);
+	//timeSpent = difftime(end, start);
+	gettimeofday(&end, NULL);
+
+	timeSpent = (end.tv_sec - start.tv_sec) * 1000.0f + (end.tv_usec - start.tv_usec) / 1000.0f;
+	
+	printf("(%s) Time spent: %f microseconds.\n", sType, timeSpent);
 	
 	return index;
 }
 
 void show_size_of_structures() {
-	size_t sizeArray = numValues * sizeof(myArray);
-	size_t sizeList = numValues * sizeof(first);
-	float sizeArrayKB = sizeArray / 1024;
-	float sizeListKB = sizeList / 1024;
+	size_t sizeArray = numValues * sizeof(int64_t);
+	size_t sizeList = numValues * sizeof(struct node);
 
-	printf("Array: %zu bytes (%.2f KB)\n", sizeArray, sizeArrayKB);
-	printf("List: %zu bytes (%.2f KB)\n", sizeList, sizeListKB);
+	printf("Array: %zu bytes.\n", sizeArray);
+	printf("List: %zu bytes.\n", sizeList);
 }
 
 
