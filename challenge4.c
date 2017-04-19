@@ -38,11 +38,16 @@ int32_t my_bin_search(int32_t value, void *data, int type);
 void set_middle();
 void get_user_search_input();
 void show_size_of_structures();
+bool read_arguments(int, char**);
 
 int numValues = 0;
 int64_t *myArray;
+char *arg1;
+int arg2 = 0;
 
-int main() {
+int main(int argc, char **argv) {
+		
+	read_arguments(argc, argv);	
 
 	show_system_info();
 	get_user_input();
@@ -192,7 +197,7 @@ void print() {
 
 	
 	if (temp2 == NULL) {
-		printf("The list is empty!\n");
+		//printf("The list is empty!\n");
 		return;
 	}
 	
@@ -232,9 +237,15 @@ int search(int32_t value) {
 void ini_array() {
 	
 	struct node *temp2 = first;
-	myArray = malloc(numValues * sizeof(*myArray));
 	
+	if (temp2 == NULL) {
+		//printf("The list is empty!\n");
+		return;
+	}
+
+	myArray = malloc(numValues * sizeof(*myArray));
 	int i = 0;
+	
 	do {
 		// "n" will be the first 32-bit (HIGH) and "count" will be the last 32-bit (LOW)
 		myArray[i] = (((int64_t) temp2->n) << 32) | ((int64_t) temp2->count);
@@ -280,7 +291,12 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 	int32_t uBound = numValues;	
 	int32_t index = -1;	
 	int32_t mid = (lBound+uBound)/2;
-	clock_t begin = clock();	
+	clock_t begin = clock();
+
+	if (data == NULL) {
+		printf("The list/array is empty!\n");
+		return -1;
+	}	
 
 	if (type == 0) {
 		struct node *midElem = data;
@@ -353,4 +369,17 @@ void show_size_of_structures() {
 	printf("List: %zu bytes (%.2f KB)\n", sizeList, sizeListKB);
 }
 
-
+bool read_arguments(int argc, char **argv) {
+	
+	if (argc > 1) {
+		arg1 = argv[1];
+		if (argc == 3) {
+			sscanf(argv[2], "%d", &arg2);
+		}
+	
+		printf("argv[1] : %s\n", arg1);
+		printf("argv[2] : %d\n", arg2);
+		return true;	
+	}
+	return false;
+}
