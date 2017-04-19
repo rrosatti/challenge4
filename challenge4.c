@@ -1,7 +1,7 @@
 /**
 
 	Remember to put "-lnuma" during the compilation: "gcc ... -lnuma"
-
+	Had to install the lib -> "libnuma-dev"
  */
 
 #include <stdio.h>
@@ -13,50 +13,46 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <time.h>
 
 struct node {
 	struct node *prev;
 	struct node *next;
 	int32_t n;
-} *newNode, *first, *last;
+	int32_t count;
+} *newNode, *middle, *first, *last;
 
 struct utsname unameData; // used to get the kernel version
-struct sysinfo sysinfoData;
+struct sysinfo sysinfoData; // used to get the total ram size
 
 void show_system_info();
+void get_user_input();
 void insert(int32_t);
 void create();
 void print();
-bool search(int32_t);
+int search(int32_t);
+void ini_array();
+int32_t get_high(int64_t);
+int32_t get_low(int64_t);
+int32_t my_bin_search(int32_t value, void *data, int type);
+void set_middle();
+void get_user_search_input();
+void show_size_of_structures();
 
-int count = 0;
+int numValues = 0;
+int64_t *myArray;
 
 int main() {
 
 	show_system_info();
+	get_user_input();
 	
-	char c[5] = {'\0'};
-	int value;
-	printf("Type numbers.\n");
-	int i = 0;
-	do {
-		fgets(c, sizeof (c), stdin); // get value as a char array
-		// check if the user pressed enter
-		// if he/she pressed twice, then exit the loop	
-		if (strcmp(c, "\n") == 0) {
-			i++;
-			continue;
-		}
-
-		// check if the user typed a number
-		if (sscanf (c, "%" SCNd32, &value) == 1) {
-			insert(value);
-		}
-		i = 0;
-
-	} while (i != 2);
-
 	print();
+	ini_array();
+	
+	get_user_search_input();	
+	
+	show_size_of_structures();
 
 	return 0;
 
@@ -79,6 +75,58 @@ void show_system_info() {
 	printf("\n--------------------\n\n");
 }
 
+void get_user_input() {
+	char c[5] = {'\0'};
+	int32_t value;
+	printf("Type numbers: (or double ENTER to quit)\n");
+	int i = 0;
+	do {
+		fgets(c, sizeof (c), stdin); // get value as a char array
+	
+		// check if the user pressed enter
+		// if he/she pressed twice, then exit the loop	
+		if (strcmp(c, "\n") == 0) {
+			i++;
+			continue;
+		}
+		
+		// check if the user typed a number
+		if (sscanf (c, "%" SCNd32, &value) == 1) {
+			insert(value);
+		}
+		i = 0;
+		
+	} while (i != 2);
+
+}
+
+void get_user_search_input() {
+	char c[5] = {'\0'};
+	int32_t value;
+	printf("\nNumber to be searched: (or double ENTER to quit)\n");
+	int i = 0;
+	do {
+		fgets(c, sizeof (c), stdin); // get value as a char array
+	
+		// check if the user pressed enter
+		// if he/she pressed twice, then exit the loop	
+		if (strcmp(c, "\n") == 0) {
+			i++;
+			continue;
+		}
+		
+		// check if the user typed a number
+		if (sscanf (c, "%" SCNd32, &value) == 1) {
+			my_bin_search(value, myArray, 1);
+			my_bin_search(value, middle, 0);
+		}
+		i = 0;
+		
+	} while (i != 2);
+
+
+}
+
 void insert(int32_t value) {
 	
 	if (first == NULL) {
@@ -86,24 +134,25 @@ void insert(int32_t value) {
 		newNode->n = value;
 		newNode->next = newNode;
 		newNode->prev = newNode;
-		first = last = newNode;
-		
+		first = last = middle = newNode;
+	 
 		return;
 	} 
 
-	if (search(value))
+	if (search(value) != -1)
 		return;
 	else {
 		create();
 		struct node *temp2 = first;
 		newNode->n = value;
 
-		if (value < first->n) {
+		if (value <= first->n) {
 			newNode->next = first;
 			newNode->prev = last;
 			first->prev = newNode;
 			last->next = newNode;
 			first = newNode;
+	
 		} else if (value >= last->n) {
 			newNode->next = first;
 			newNode->prev = last;
@@ -112,31 +161,37 @@ void insert(int32_t value) {
 			last = newNode;
 		} else {
 			while (value > temp2->n) {
-				temp2 = temp2->next;
+				temp2 = temp2->next; 
 			}
 
 			newNode->next = temp2;
 			newNode->prev = temp2->prev;
 			temp2->prev->next = newNode;
 			temp2->prev = newNode;
-		}
-		
+
+		}	
+	
 	}
-	count++;
+	
+	//numValues++;
+	set_middle();
 	
 }
 
 void create() {
-	size_t x = sizeof(struct node);
-	newNode = (struct node*) malloc(x);
+	newNode = (struct node*) malloc(1*sizeof(struct node));
 	newNode->prev = NULL;
 	newNode->next = NULL;
+	newNode->count = 1;
+	numValues++;
 }
 
 void print() {
-	struct node* temp2 = first;
 	
-	if (first == NULL) {
+	struct node* temp2 = first;
+
+	
+	if (temp2 == NULL) {
 		printf("The list is empty!\n");
 		return;
 	}
@@ -146,26 +201,156 @@ void print() {
 		printf("%" PRId32 " ", temp2->n);
 		temp2 = temp2->next;
 	} while (temp2 != first);
-
+	
 	printf("\n");
 	
 }
 
-bool search(int32_t value) {
+int search(int32_t value) {
 	
-	struct node* temp2 = first;
+	struct node *temp2 = first;
 
-	if (first == NULL) {
+	if (temp2 == NULL) {
 		printf("The list is empty!\n");
-		return false;
+		return -1;
 	}
-
+	
+	int i = 0;
 	do {
-		if (temp2->n == value)
-			return true;
+		i++;
+		if (temp2->n == value) {
+			temp2->count++;
+			return i;
+		}
 		temp2 = temp2->next;
-	} while (temp2 != first);
-
-	return false;
+	} while (temp2 != last);
+	
+	return -1;
 
 }
+
+void ini_array() {
+	
+	struct node *temp2 = first;
+	myArray = malloc(numValues * sizeof(*myArray));
+	
+	int i = 0;
+	do {
+		// "n" will be the first 32-bit (HIGH) and "count" will be the last 32-bit (LOW)
+		myArray[i] = (((int64_t) temp2->n) << 32) | ((int64_t) temp2->count);
+		
+		//printf("High: %" PRId32 " \n", get_high(myArray[i]));
+		//printf("Low: %" PRId32 " \n", get_low(myArray[i]));
+		temp2 = temp2->next;
+		i++;		
+	} while (temp2 != first);
+
+}
+
+int32_t get_high(int64_t valueAndCount) {
+	return valueAndCount >> 32;
+}
+
+int32_t get_low(int64_t valueAndCount) {
+	return valueAndCount & 0xFFFFFFFF;
+}
+
+/**
+ -- Try to optmize this using the value of the "current middle" to set the "new middle" 
+*/
+void set_middle() {
+	
+	struct node *temp2 = first;
+
+	if (temp2 == NULL) {
+		printf("The list is empty!\n");
+		return;
+	}
+	
+	for (int i = 0; i < (int)(numValues/2); i++) {
+		temp2 = temp2->next;
+	}
+
+	middle = temp2;
+
+}
+
+int32_t my_bin_search(int32_t value, void *data, int type) {
+	int32_t lBound = 0;
+	int32_t uBound = numValues;	
+	int32_t index = -1;	
+	int32_t mid = (lBound+uBound)/2;
+	clock_t begin = clock();	
+
+	if (type == 0) {
+		struct node *midElem = data;
+
+		while (lBound <= uBound) {
+			if (midElem->n < value) {
+				lBound = mid + 1;
+
+				int32_t up = ((lBound + uBound)/2) - mid;
+				int i = 0;
+				while (i < up) {
+					midElem = midElem->next;
+					i++;
+				}
+			} else if (midElem->n == value) {
+				printf("(List) Value: %" PRId32 " at pos: %" PRId32 "\n", midElem->n, mid);
+				index = mid;
+				break;
+				//return mid;
+			} else {
+				uBound = mid - 1;
+
+				int32_t down = mid - ((lBound + uBound)/2);
+				int i = 0;
+		
+				while (i < down) {
+					midElem = midElem->prev;
+					i++;
+				}
+			}
+			
+			mid = (lBound + uBound)/2;
+		}		
+
+	} else if (type == 1) {
+
+		while (lBound <= uBound) {
+			if (get_high(((int64_t *) data)[mid]) < value) {
+				lBound = mid + 1;
+			} else if (get_high(((int64_t *)data)[mid]) == value) {
+				printf("(Array) Value: %" PRId32 " at pos: %" PRId32 "\n", value, mid);
+				index = mid;
+				break;
+				//return mid;
+			} else {
+				uBound = mid - 1;
+			}
+
+			mid = (lBound + uBound)/2;
+				
+		}
+	
+	}
+	
+	clock_t end = clock();
+	
+	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	printf("Time spent: %f seconds.\n", time_spent);
+	
+	return index;
+}
+
+void show_size_of_structures() {
+	size_t sizeArray = numValues * sizeof(myArray);
+	size_t sizeList = numValues * sizeof(first);
+	float sizeArrayKB = sizeArray / 1024;
+	float sizeListKB = sizeList / 1024;
+
+	printf("Array: %zu bytes (%.2f KB)\n", sizeArray, sizeArrayKB);
+	printf("List: %zu bytes (%.2f KB)\n", sizeList, sizeListKB);
+}
+
+
