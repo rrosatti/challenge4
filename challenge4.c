@@ -15,6 +15,10 @@
 #include <inttypes.h>
 #include <time.h>
 
+#define get_high(x) (x >> 32)
+#define get_low(x) (x & 0xFFFFFFFF)
+#define pack_value_and_count(temp2) (((int64_t) temp2->n << 32) | ((int64_t) temp2->count))
+
 struct node {
 	struct node *prev;
 	struct node *next;
@@ -32,8 +36,6 @@ void create();
 void print();
 int search(int32_t);
 void ini_array();
-int32_t get_high(int64_t);
-int32_t get_low(int64_t);
 int32_t my_bin_search(int32_t value, void *data, int type);
 void set_middle();
 void get_user_search_input();
@@ -237,22 +239,14 @@ void ini_array() {
 	int i = 0;
 	do {
 		// "n" will be the first 32-bit (HIGH) and "count" will be the last 32-bit (LOW)
-		myArray[i] = (((int64_t) temp2->n) << 32) | ((int64_t) temp2->count);
+		myArray[i] = pack_value_and_count(temp2);
 		
-		//printf("High: %" PRId32 " \n", get_high(myArray[i]));
-		//printf("Low: %" PRId32 " \n", get_low(myArray[i]));
+		//printf("High: %ld\n", get_high(myArray[i]));
+		//printf("Low: %ld\n", get_low(myArray[i]));
 		temp2 = temp2->next;
 		i++;		
 	} while (temp2 != first);
 
-}
-
-int32_t get_high(int64_t valueAndCount) {
-	return valueAndCount >> 32;
-}
-
-int32_t get_low(int64_t valueAndCount) {
-	return valueAndCount & 0xFFFFFFFF;
 }
 
 /**
