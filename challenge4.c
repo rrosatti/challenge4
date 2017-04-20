@@ -44,6 +44,8 @@ void set_middle();
 void get_user_search_input();
 void show_size_of_structures();
 bool read_arguments(int, char**);
+void _old_read_from_file();
+void _new_read_from_file();
 
 int numValues = 0;
 int64_t *myArray;
@@ -52,10 +54,14 @@ int arg2 = 0;
 
 int main(int argc, char **argv) {
 		
-	read_arguments(argc, argv);	
+	bool args = read_arguments(argc, argv);	
 
 	show_system_info();
-	get_user_input();
+
+	if (args) 
+		_new_read_from_file();
+	else
+		get_user_input();
 	
 	print();
 	ini_array();
@@ -138,7 +144,8 @@ void get_user_search_input() {
 }
 
 void insert(int32_t value) {
-	
+
+	printf("%d\n", value);	
 	if (first == NULL) {
 		create();
 		newNode->n = value;
@@ -400,4 +407,77 @@ bool read_arguments(int argc, char **argv) {
 		return true;	
 	}
 	return false;
+}
+
+void _old_read_from_file() {
+	FILE *f;
+	
+	f = fopen(arg1, "r");	
+
+	int c;
+	int temp = 0;
+	bool neg = false;
+	while ((c=fgetc(f))) {
+		// if c == "." it will finish
+		// if c == "-" it will set neg = true
+		if (c == '.') {
+			break;
+		} else if (c == '-') {
+			neg = true;
+			continue;
+		}
+
+		
+		// if c != "," it will get the number
+		// if c == "," it will ignore and insert the current number
+		if (c != ',') {	
+			temp = (temp*10) + (c - '0'); // (c - '0) means: c(ASCII) - 48 
+		} else {
+			if (neg) temp*=-1;
+			insert(temp);
+
+			temp = 0;
+			neg = false;	
+		}
+		
+	}
+	
+	fclose(f);
+}
+
+void _new_read_from_file() {
+	FILE *f;
+	char *buffer;
+	char *values;
+
+	f = fopen(arg1, "r");
+
+	if (f != NULL) {
+		fseek(f, 0, SEEK_END); // go to the end of the file
+		int size = ftell(f); // get current file pointer
+		fseek(f, 0, SEEK_SET); // go back to the beginning of the file
+		
+		buffer = malloc(size);
+
+		if (buffer) {
+			fread(buffer, 1, size, f);
+		}
+		fclose(f);
+
+	} else {
+		printf("The file could not be open.\n");
+		return;
+	}
+
+	//printf("%s\n", buffer);
+
+	values = strtok (buffer, ",.");
+	while (values != NULL) {
+		char *ptr;
+		//printf("%s\n", buffer);
+		insert(strtol(values, &ptr, 10));
+		values = strtok(NULL, ",.");
+	}
+	printf("finished.\n");
+	
 }
