@@ -46,6 +46,7 @@ void show_size_of_structures();
 bool read_arguments(int, char**);
 void _old_read_from_file();
 void _new_read_from_file();
+void write_to_file();
 
 int numValues = 0;
 int64_t *myArray;
@@ -69,6 +70,9 @@ int main(int argc, char **argv) {
 	get_user_search_input();	
 	
 	show_size_of_structures();
+
+	if (arg2 == 1)
+		write_to_file();
 
 	return 0;
 
@@ -479,5 +483,29 @@ void _new_read_from_file() {
 		values = strtok(NULL, ",.");
 	}
 	printf("finished.\n");
+	
+}
+
+void write_to_file() {
+	FILE *f;
+
+	f = fopen(arg1, "w");
+
+	if (f != NULL) {
+		struct node *temp2 = first;
+
+		do {
+			for (int i=0; i<temp2->count; i++) {
+				fprintf(f, "%d,", temp2->n);			
+			}	
+			temp2 = temp2->next;
+		} while (temp2 != first);
+
+		fseek(f, -1, SEEK_END);
+		fprintf(f, ".");
+		
+		fclose(f);
+	}
+
 	
 }
