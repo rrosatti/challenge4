@@ -15,6 +15,7 @@
 #include <inttypes.h>
 #include <time.h>
 #include <sys/time.h>
+	#include <ctype.h>
 
 #define get_high(x) (x >> 32)
 #define get_low(x) (x & 0xFFFFFFFF)
@@ -149,7 +150,7 @@ void get_user_search_input() {
 
 void insert(int32_t value) {
 
-	printf("%d\n", value);	
+	//printf("%d\n", value);	
 	if (first == NULL) {
 		create();
 		newNode->n = value;
@@ -418,35 +419,45 @@ void _old_read_from_file() {
 	
 	f = fopen(arg1, "r");	
 
-	int c;
-	int temp = 0;
-	bool neg = false;
-	while ((c=fgetc(f))) {
-		// if c == "." it will finish
-		// if c == "-" it will set neg = true
-		if (c == '.') {
-			break;
-		} else if (c == '-') {
-			neg = true;
-			continue;
-		}
+	if (f != NULL) {
+		int c;
+		int temp = 0;
+		bool neg = false;
+		while ((c=fgetc(f))) {
+			// if c == "." it will finish
+			// if c == "-" it will set neg = true	
+			if (c == '.') {
+				break;
+			} else if (c == '-') {
+				neg = true;
+				continue;
+			}
 
 		
-		// if c != "," it will get the number
-		// if c == "," it will ignore and insert the current number
-		if (c != ',') {	
-			temp = (temp*10) + (c - '0'); // (c - '0) means: c(ASCII) - 48 
-		} else {
-			if (neg) temp*=-1;
-			insert(temp);
+			// if c != "," it will get the number
+			// if c == "," it will ignore and insert the current number
+			if (c != ',') {	
+				temp = (temp*10) + (c - '0'); // (c - '0) means: c(ASCII) - 48 
+			} else {
+				if (neg) temp*=-1;
+				insert(temp);
 
-			temp = 0;
-			neg = false;	
+				temp = 0;
+				neg = false;	
+			}
+		
 		}
 		
-	}
+		fclose(f);
+
 	
-	fclose(f);
+	} else {
+		printf("The file is empty!.\n");
+		get_user_input();
+		return;
+	}
+
+		
 }
 
 void _new_read_from_file() {
@@ -470,19 +481,37 @@ void _new_read_from_file() {
 
 	} else {
 		printf("The file could not be open.\n");
+		get_user_input();
 		return;
 	}
 
 	//printf("%s\n", buffer);
-
+	
+	/**
 	values = strtok (buffer, ",.");
 	while (values != NULL) {
 		char *ptr;
-		//printf("%s\n", buffer);
+		printf("%s\n", values);
+		
 		insert(strtol(values, &ptr, 10));
 		values = strtok(NULL, ",.");
 	}
-	printf("finished.\n");
+	//printf("finished.\n");
+	*/
+	
+	char *token;
+	values = strdup(buffer);
+	while ((token = strsep(&values, ",.")) != NULL) {
+		// check if the value is not empty or the first character is not a whitespace	
+		if (values != NULL && strlen(token) > 0) {
+			//printf("n-> %s | size: %ld\n", token, strlen(token));	
+			char *ptr;	
+			insert(strtol(token, &ptr, 10)); 
+		} else {
+			//printf("NULL\n");
+		}
+		
+	}	
 	
 }
 
@@ -493,6 +522,9 @@ void write_to_file() {
 
 	if (f != NULL) {
 		struct node *temp2 = first;
+
+		if (first == NULL)
+			return;
 
 		do {
 			for (int i=0; i<temp2->count; i++) {
@@ -505,6 +537,9 @@ void write_to_file() {
 		fprintf(f, ".");
 		
 		fclose(f);
+	} else {
+		printf("The file is empty!.\n");
+		return;
 	}
 
 	
