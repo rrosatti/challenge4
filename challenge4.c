@@ -15,11 +15,17 @@
 #include <inttypes.h>
 #include <time.h>
 #include <sys/time.h>
-	#include <ctype.h>
+#include <ctype.h>
 
 #define get_high(x) (x >> 32)
 #define get_low(x) (x & 0xFFFFFFFF)
 #define pack_value_and_count(temp2) (((int64_t) temp2->n << 32) | ((int64_t) temp2->count))
+
+#ifdef OLDREAD
+	#define read_from_file() _old_read_from_file()	
+#else
+	#define read_from_file() _new_read_from_file()
+#endif
 
 struct node {
 	struct node *prev;
@@ -61,7 +67,7 @@ int main(int argc, char **argv) {
 	show_system_info();
 
 	if (args) 
-		_new_read_from_file();
+		read_from_file(); 
 	else
 		get_user_input();
 	
@@ -275,14 +281,6 @@ void ini_array() {
 	} while (temp2 != first);
 
 }
-/**
-int32_t get_high(int64_t valueAndCount) {
-	return valueAndCount >> 32;
-}
-
-int32_t get_low(int64_t valueAndCount) {
-	return valueAndCount & 0xFFFFFFFF;
-}*/
 
 /**
  -- Try to optmize this using the value of the "current middle" to set the "new middle" 
@@ -309,7 +307,6 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 	int32_t uBound = numValues;	
 	int32_t index = -1;	
 	int32_t mid = (lBound+uBound)/2;
-	//clock_t begin = clock();	
 	struct timeval start, end;
 	float timeSpent;
 
@@ -318,7 +315,6 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 		return -1;
 	}	
 
-	//time(&start);
 	gettimeofday(&start, NULL);
 
 	char* sType;
@@ -341,7 +337,6 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 				printf("(%s) Value: %" PRId32 " at pos: %" PRId32 "\n", sType, midElem->n, mid);
 				index = mid;
 				break;
-				//return mid;
 			} else {
 				uBound = mid - 1;
 
@@ -366,7 +361,6 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 				printf("(%s) Value: %" PRId32 " at pos: %" PRId32 "\n", sType, value, mid);
 				index = mid;
 				break;
-				//return mid;
 			} else {
 				uBound = mid - 1;
 			}
@@ -377,16 +371,11 @@ int32_t my_bin_search(int32_t value, void *data, int type) {
 	
 	}
 	
-	//clock_t end = clock();
-	//double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-	
-	//time(&end);
-	//timeSpent = difftime(end, start);
 	gettimeofday(&end, NULL);
 
 	timeSpent = (end.tv_sec - start.tv_sec) * 1000.0f + (end.tv_usec - start.tv_usec) / 1000.0f;
 	
-	printf("(%s) Time spent: %f microseconds.\n", sType, timeSpent);
+	printf("(%s) Time spent: %f milliseconds.\n", sType, timeSpent);
 	
 	return index;
 }
@@ -416,10 +405,13 @@ bool read_arguments(int argc, char **argv) {
 
 void _old_read_from_file() {
 	FILE *f;
-	
+	struct timeval start, end;
+	float timeSpent;
+		
 	f = fopen(arg1, "r");	
 
 	if (f != NULL) {
+		gettimeofday(&start, NULL);
 		int c;
 		int temp = 0;
 		bool neg = false;
@@ -449,7 +441,11 @@ void _old_read_from_file() {
 		}
 		
 		fclose(f);
-
+		
+		gettimeofday(&end, NULL);
+		timeSpent =  (end.tv_sec - start.tv_sec) * 1000.0f + (end.tv_usec - start.tv_usec) / 1000.0f;
+ 	
+		printf("Time spent reading the file and creating the list: %f milliseconds.\n", timeSpent);
 	
 	} else {
 		printf("The file is empty!.\n");
@@ -464,10 +460,14 @@ void _new_read_from_file() {
 	FILE *f;
 	char *buffer;
 	char *values;
+	struct timeval start, end;
+	float timeSpent;
 
+	
 	f = fopen(arg1, "r");
 
 	if (f != NULL) {
+		gettimeofday(&start, NULL);
 		fseek(f, 0, SEEK_END); // go to the end of the file
 		int size = ftell(f); // get current file pointer
 		fseek(f, 0, SEEK_SET); // go back to the beginning of the file
@@ -485,8 +485,6 @@ void _new_read_from_file() {
 		return;
 	}
 
-	//printf("%s\n", buffer);
-	
 	/**
 	values = strtok (buffer, ",.");
 	while (values != NULL) {
@@ -502,16 +500,18 @@ void _new_read_from_file() {
 	char *token;
 	values = strdup(buffer);
 	while ((token = strsep(&values, ",.")) != NULL) {
-		// check if the value is not empty or the first character is not a whitespace	
+		// check if it returned a valid value	
 		if (values != NULL && strlen(token) > 0) {
-			//printf("n-> %s | size: %ld\n", token, strlen(token));	
-			char *ptr;	
-			insert(strtol(token, &ptr, 10)); 
-		} else {
-			//printf("NULL\n");
+			//printf("n-> %s | size: %ld\n", token, strlen(token));		
+			insert(strtol(token, NULL, 10)); 
 		}
 		
-	}	
+	}
+	
+	gettimeofday(&end, NULL);
+	timeSpent =  (end.tv_sec - start.tv_sec) * 1000.0f + (end.tv_usec - start.tv_usec) / 1000.0f;
+
+	printf("Time spent reading the file and creating the list: %f milliseconds.\n", timeSpent);	
 	
 }
 
@@ -541,6 +541,5 @@ void write_to_file() {
 		printf("The file is empty!.\n");
 		return;
 	}
-
 	
 }
